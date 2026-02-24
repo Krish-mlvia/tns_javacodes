@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>PlaceManage — Create Account</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com"/>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+    <link rel="stylesheet" href="styles.css"/>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+</head>
+<body class="auth-page">
+    <div id="toast-container"></div>
+    <div class="auth-container">
+        <div class="auth-card">
+            <div class="auth-header">
+                <h1 class="brand">
+                    <span class="brand-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+                    </span>
+                    PlaceManage
+                </h1>
+                <p class="brand-sub">Placement Management System</p>
+            </div>
+            <h2 class="form-title">Create Account</h2>
+            <div id="error-banner" class="alert alert-error hidden"></div>
+            <div id="success-banner" class="alert alert-success hidden"></div>
+            <form id="register-form" novalidate>
+                <div class="form-group">
+                    <label for="name">Full Name</label>
+                    <input type="text" id="name" placeholder="Enter your full name" required autocomplete="name"/>
+                </div>
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" placeholder="Choose a username" required autocomplete="username"/>
+                </div>
+                <div class="form-group">
+                    <label for="type">Account Type</label>
+                    <select id="type" required>
+                        <option value="" disabled selected>Select account type</option>
+                        <option value="UNIVERSITY">University</option>
+                        <option value="CORPORATE">Corporate</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <div class="input-wrapper">
+                        <input type="password" id="password" placeholder="Create a strong password" required autocomplete="new-password"/>
+                        <button type="button" class="toggle-pw" id="toggle-pw" aria-label="Toggle password">
+                            <svg id="pw-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
+                        </button>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary btn-full" id="register-btn">Create Account</button>
+            </form>
+            <p class="auth-footer">Already have an account? <a href="index.html">Sign in</a></p>
+        </div>
+    </div>
+    <script src="app.js"></script>
+    <script>
+        const EYE_ICON = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>`;
+        const EYE_OFF_ICON = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-10-8-10-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 10 8 10 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>`;
+        document.getElementById('toggle-pw').addEventListener('click', function() {
+            const pw = document.getElementById('password');
+            const isHidden = pw.type === 'password';
+            pw.type = isHidden ? 'text' : 'password';
+            this.innerHTML = isHidden ? EYE_OFF_ICON : EYE_ICON;
+        });
+
+        document.getElementById('register-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const btn = document.getElementById('register-btn');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="btn-spinner"></span> Creating…';
+
+            const name = document.getElementById('name').value.trim();
+            const username = document.getElementById('username').value.trim();
+            const type = document.getElementById('type').value;
+            const password = document.getElementById('password').value;
+            const errorBanner = document.getElementById('error-banner');
+            const successBanner = document.getElementById('success-banner');
+            errorBanner.classList.add('hidden');
+            successBanner.classList.add('hidden');
+
+            if (!name || !username || !type || !password) {
+                showBanner(errorBanner, 'All fields are required.');
+                btn.disabled = false;
+                btn.innerHTML = 'Create Account';
+                return;
+            }
+            try {
+                const res = await fetch('http://localhost:8080/api/users/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, username, type, password })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    btn.innerHTML = 'Account created!';
+                    showBanner(successBanner, 'Account created successfully! Redirecting…');
+                    setTimeout(() => window.location.href = 'index.html', 1500);
+                } else {
+                    showBanner(errorBanner, data.message || 'Registration failed.');
+                    btn.disabled = false;
+                    btn.innerHTML = 'Create Account';
+                }
+            } catch(err) {
+                showBanner(errorBanner, 'Unable to connect to server. Please try again.');
+                btn.disabled = false;
+                btn.innerHTML = 'Create Account';
+            }
+        });
+    </script>
+</body>
+</html>

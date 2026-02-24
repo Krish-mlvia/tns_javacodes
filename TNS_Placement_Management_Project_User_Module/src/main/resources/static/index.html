@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>PlaceManage — Sign In</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com"/>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+    <link rel="stylesheet" href="styles.css"/>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+</head>
+<body class="auth-page">
+    <div id="toast-container"></div>
+    <div class="auth-container">
+        <div class="auth-card">
+            <div class="auth-header">
+                <h1 class="brand">
+                    <span class="brand-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+                    </span>
+                    PlaceManage
+                </h1>
+                <p class="brand-sub">Placement Management System</p>
+            </div>
+            <h2 class="form-title">Welcome back</h2>
+            <div id="error-banner" class="alert alert-error hidden"></div>
+            <form id="login-form" novalidate>
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" placeholder="Enter your username" required autocomplete="username"/>
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <div class="input-wrapper">
+                        <input type="password" id="password" placeholder="Enter your password" required autocomplete="current-password"/>
+                        <button type="button" class="toggle-pw" id="toggle-pw" aria-label="Toggle password visibility">
+                            <svg id="pw-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
+                        </button>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary btn-full" id="login-btn">
+                    Sign In
+                </button>
+            </form>
+            <p class="auth-footer">No account? <a href="register.html">Create one</a></p>
+        </div>
+    </div>
+    <script src="app.js"></script>
+    <script>
+        // Password toggle
+        const EYE_ICON = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>`;
+        const EYE_OFF_ICON = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-10-8-10-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 10 8 10 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>`;
+        document.getElementById('toggle-pw').addEventListener('click', function() {
+            const pw = document.getElementById('password');
+            const isHidden = pw.type === 'password';
+            pw.type = isHidden ? 'text' : 'password';
+            this.innerHTML = isHidden ? EYE_OFF_ICON : EYE_ICON;
+        });
+
+        document.getElementById('login-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const btn = document.getElementById('login-btn');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="btn-spinner"></span> Signing in…';
+
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value;
+            const banner = document.getElementById('error-banner');
+            banner.classList.add('hidden');
+
+            try {
+                const res = await fetch('http://localhost:8080/api/users/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    localStorage.setItem('loggedInUser', username);
+                    localStorage.setItem('loggedInUserId', data.data.id);
+                    btn.innerHTML = 'Redirecting…';
+                    setTimeout(() => window.location.href = 'dashboard.html', 500);
+                } else {
+                    showBanner(banner, data.message || 'Login failed.');
+                    btn.disabled = false;
+                    btn.innerHTML = 'Sign In';
+                }
+            } catch(err) {
+                showBanner(banner, 'Unable to connect to server. Please try again.');
+                btn.disabled = false;
+                btn.innerHTML = 'Sign In';
+            }
+        });
+    </script>
+</body>
+</html>
